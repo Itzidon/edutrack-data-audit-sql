@@ -1,57 +1,85 @@
-# Auditoría de Datos en EduTrack — Informe de análisis
+# Auditoría de Datos en EduTrack
 
-## Contexto y metodología
+## Introducción
 
-Se importó `edutrack.sql` en Supabase y se ejecutaron las consultas **en orden (Q1 a Q12)**. Las consultas Q1–Q5 reflejan la base **antes** de insertar, actualizar y borrar registros; Q9–Q12 reflejan la base **después** de los cambios Q6–Q8. Se modificó únicamente `enrollments` durante la auditoría; las tablas `students` y `courses` se usaron solo como contexto.
+En este proyecto he trabajado con la base de datos de EduTrack utilizando Supabase y SQL.
 
-## Q1 - Inscripciones en 'Intro to Python'
+El objetivo era revisar las inscripciones de los estudiantes, detectar posibles errores, corregir algunos registros y analizar los resultados de los cursos.
 
-**Resultado: 5 inscripciones** (antes de borrar las cuentas de prueba).
+Primero importé el archivo `edutrack.sql` en Supabase y comprobé que los datos se habían cargado correctamente.
 
-| Estudiante | Correo | Completado |
-| --- | --- | ---: |
+Después realicé 12 consultas SQL. Las primeras sirven para buscar información, las siguientes para corregir registros y las últimas para obtener datos generales sobre las inscripciones, el progreso y los ingresos.
+
+Todas las modificaciones se realizaron en la tabla `enrollments`, sin cambiar las tablas `students` y `courses`.
+
+## Q1 - Inscripciones en Intro to Python
+
+Busqué los estudiantes inscritos en Intro to Python, mostrando sus nombres, correos electrónicos y porcentajes de progreso.
+
+**Resultado: 5 inscripciones.**
+
+| Estudiante | Email | Progreso |
+|---|---|---:|
 | Emily Watson | emily.watson@student.edutrack.com | 85 % |
 | Klaus Weber | klaus.weber@student.edutrack.com | 92 % |
 | Marco Rossi | marco.rossi@student.edutrack.com | 88 % |
 | James Miller | james.miller@test.com | 30 % |
 | Priya Sharma | priya.sharma@student.edutrack.com | 55 % |
 
-## Q2 - Inscripciones con completado inferior al 10 %
+Estos resultados corresponden a los datos antes de eliminar las cuentas de prueba.
 
-**Resultado: 4 inscripciones**, correspondientes a 3 estudiantes.
+## Q2 - Inscripciones con menos del 10 % de progreso
 
-| Estudiante | Curso | Completado |
-| --- | --- | ---: |
+Busqué las inscripciones que tenían un porcentaje de completado inferior al 10 %.
+
+**Resultado: 4 inscripciones de 3 estudiantes.**
+
+| Estudiante | Curso | Progreso |
+|---|---|---:|
 | Lucia Fernandes | Web Design Basics | 5 % |
 | Lucia Fernandes | Digital Marketing 101 | 3 % |
 | Yuki Nakamura | UI/UX Fundamentals | 0 % |
 | Pierre Dubois | UI/UX Fundamentals | 0 % |
 
+Hay varias inscripciones con muy poco progreso. Sería interesante revisar estos casos para saber si los estudiantes necesitan algún tipo de seguimiento.
+
 ## Q3 - Inscripciones sin instructor
 
-**Resultado: 2 inscripciones** con `instructor IS NULL`.
+Busqué los registros que no tenían un instructor asignado.
 
-- ID 10: Yuki Nakamura — UI/UX Fundamentals.
-- ID 11: Pierre Dubois — UI/UX Fundamentals.
+**Resultado: 2 inscripciones.**
 
-## Q4 - Cinco inscripciones con mayor progreso sin haber aprobado
+- Yuki Nakamura, ID 10, curso UI/UX Fundamentals.
+- Pierre Dubois, ID 11, curso UI/UX Fundamentals.
 
-**Resultado: 5 inscripciones** (antes de Q6–Q8), ordenadas por porcentaje descendente.
+En ambos casos, el campo `instructor` tenía el valor `NULL`.
 
-| Estudiante | Curso | Completado | ¿Aprobado? |
-| --- | --- | ---: | --- |
-| Emily Watson | Web Design Basics | 60 % | No |
-| Priya Sharma | Intro to Python | 55 % | No |
-| Yuki Nakamura | Data Analysis with SQL | 45 % | No |
-| Emily Watson | Advanced Python | 40 % | No |
-| James Miller | Intro to Python | 30 % | No |
+## Q4 - Cinco inscripciones con mayor progreso sin aprobar
+
+Busqué las cinco inscripciones con mayor porcentaje de completado entre las que todavía no habían aprobado.
+
+**Resultado: 5 inscripciones.**
+
+| Estudiante | Curso | Progreso |
+|---|---|---:|
+| Emily Watson | Web Design Basics | 60 % |
+| Priya Sharma | Intro to Python | 55 % |
+| Yuki Nakamura | Data Analysis with SQL | 45 % |
+| Emily Watson | Advanced Python | 40 % |
+| James Miller | Intro to Python | 30 % |
+
+Emily Watson es la estudiante con mayor progreso de este grupo, con un 60 % en Web Design Basics, aunque todavía no aparece como aprobada.
+
+Los resultados corresponden al estado de la base de datos antes de las correcciones.
 
 ## Q5 - Inscripciones desde el 1 de julio de 2024
 
-**Resultado: 9 inscripciones** (antes de Q6–Q8), en orden de fecha descendente.
+Busqué las inscripciones realizadas desde el 1 de julio de 2024 y las ordené desde la más reciente hasta la más antigua.
+
+**Resultado: 9 inscripciones.**
 
 | Fecha | Estudiante | Curso |
-| --- | --- | --- |
+|---|---|---|
 | 2025-03-05 | Emily Watson | Advanced Python |
 | 2025-02-20 | Pierre Dubois | Data Analysis with SQL |
 | 2025-01-10 | Priya Sharma | Intro to Python |
@@ -62,51 +90,83 @@ Se importó `edutrack.sql` en Supabase y se ejecutaron las consultas **en orden 
 | 2024-08-09 | Marco Rossi | Intro to Python |
 | 2024-07-01 | Lucia Fernandes | Digital Marketing 101 |
 
-## Q6 - Añadir la inscripción faltante
+La inscripción más reciente de este grupo era la de Emily Watson, del 5 de marzo de 2025.
 
-**Resultado: 1 inscripción insertada.** Se verificó primero que el ID 18 no existía.
+## Q6 - Añadir una inscripción que faltaba
+
+En esta consulta añadí una inscripción de Lucia Fernandes que no estaba registrada en la base de datos.
+
+Primero comprobé que no existía ningún registro con el ID 18.
+
+**Resultado: 1 inscripción añadida.**
+
+Datos de la inscripción:
 
 - ID: 18
-- Estudiante: Lucia Fernandes (ID 3; `lucia.fernandes@student.edutrack.com`)
-- Curso: Advanced Python (ID 5); categoría Programming
-- Fecha de inscripción: 2025-04-01
-- Porcentaje completado: 0 %; aprobado: false
-- Cuota mensual pagada: 69,99 €; instructor: Carlos Vega
+- Estudiante: Lucia Fernandes
+- ID del estudiante: 3
+- Email: lucia.fernandes@student.edutrack.com
+- Curso: Advanced Python
+- ID del curso: 5
+- Categoría: Programming
+- Fecha: 2025-04-01
+- Progreso: 0 %
+- Aprobado: No
+- Cuota pagada: 69,99 €
+- Instructor: Carlos Vega
 
-## Q7 - Completar instructores ausentes
+La inscripción se añadió correctamente a la tabla `enrollments`.
 
-**Resultado: 2 inscripciones actualizadas.** El campo `instructor` se cambió de `NULL` a `Pending assignment` únicamente en:
+## Q7 - Corregir los instructores vacíos
 
-- ID 10: Yuki Nakamura.
-- ID 11: Pierre Dubois.
+Actualicé las inscripciones que no tenían instructor asignado.
 
-## Q8 - Eliminar cuentas de prueba
+**Resultado: 2 registros actualizados.**
 
-**Resultado: 2 inscripciones eliminadas**, tras comprobar los correos con una consulta `SELECT` previa.
+- Yuki Nakamura, ID 10.
+- Pierre Dubois, ID 11.
 
-- ID 13: James Miller — `james.miller@test.com`.
-- ID 14: Alex Chen — `alex.chen@test.com`.
+En los dos registros cambié el valor `NULL` por `Pending assignment`.
 
-No se eliminaron las filas de las tablas `students` ni `courses`.
+De esta manera, las inscripciones quedan identificadas como pendientes de asignar un instructor.
 
-## Q9 - Inscripciones por categoría
+## Q8 - Eliminar las cuentas de prueba
 
-**Resultado: 16 inscripciones** después de las correcciones.
+Busqué las inscripciones que tenían correos electrónicos terminados en `@test.com`.
+
+Antes de eliminarlas, comprobé cuáles eran los registros afectados.
+
+**Resultado: 2 inscripciones eliminadas.**
+
+- James Miller, ID 13: james.miller@test.com
+- Alex Chen, ID 14: alex.chen@test.com
+
+Se eliminaron únicamente estas inscripciones de la tabla `enrollments`, sin modificar las tablas `students` ni `courses`.
+
+## Q9 - Número de inscripciones por categoría
+
+Después de realizar las correcciones, conté cuántas inscripciones había en cada categoría.
+
+**Resultado: 16 inscripciones.**
 
 | Categoría | Inscripciones |
-| --- | ---: |
+|---|---:|
 | Programming | 7 |
 | Design | 4 |
 | Data | 3 |
 | Marketing | 2 |
 | **Total** | **16** |
 
-## Q10 - Promedio de completado por curso
+Programming es la categoría con más inscripciones, mientras que Marketing tiene menos.
 
-**Resultado: 6 cursos**, ordenados de menor a mayor.
+## Q10 - Progreso medio por curso
 
-| Curso | Promedio de completado |
-| --- | ---: |
+Calculé el porcentaje medio de completado de cada curso y ordené los resultados de menor a mayor.
+
+**Resultado: 6 cursos.**
+
+| Curso | Progreso medio |
+|---|---:|
 | UI/UX Fundamentals | 0,00 % |
 | Web Design Basics | 32,50 % |
 | Digital Marketing 101 | 36,50 % |
@@ -114,28 +174,64 @@ No se eliminaron las filas de las tablas `students` ni `courses`.
 | Data Analysis with SQL | 47,67 % |
 | Intro to Python | 80,00 % |
 
-El curso con peor completado es **UI/UX Fundamentals** (0 %).
+El curso con menor progreso es UI/UX Fundamentals, con un 0 %.
+
+Por otro lado, Intro to Python tiene el mejor resultado, con un progreso medio del 80 %.
 
 ## Q11 - Cursos con más de tres inscripciones
 
-**Resultado: 1 curso**.
+Busqué los cursos que tenían más de tres inscripciones registradas.
 
-- Intro to Python: **4 inscripciones**.
+**Resultado: 1 curso.**
+
+| Curso | Inscripciones |
+|---|---:|
+| Intro to Python | 4 |
+
+Intro to Python es el único curso que cumple esta condición después de eliminar las cuentas de prueba.
 
 ## Q12 - Ingresos totales por categoría
 
-**Resultado: 4 categorías**, ordenadas de mayor a menor.
+Calculé la suma de las cuotas pagadas que aparecen registradas en cada categoría.
 
-| Categoría | Ingresos totales |
-| --- | ---: |
+**Resultado: 819,84 € en total.**
+
+| Categoría | Ingresos |
+|---|---:|
 | Programming | 409,93 € |
 | Data | 179,97 € |
 | Design | 169,96 € |
 | Marketing | 59,98 € |
 | **Total** | **819,84 €** |
 
+Programming es la categoría con la mayor cantidad registrada, mientras que Marketing tiene la menor.
+
+Estos importes corresponden a la suma del campo `monthly_fee_paid` de las inscripciones, no a una estimación de ingresos futuros.
+
 ## Conclusiones
 
-La auditoría identificó **4 inscripciones con progreso inferior al 10 %**, añadió **1 inscripción omitida**, corrigió **2 instructores ausentes** y eliminó **2 inscripciones de prueba**. Tras los cambios quedan **16 inscripciones** y **819,84 €** de cuotas registradas. *UI/UX Fundamentals* presenta el progreso más bajo (0 %), mientras que *Intro to Python* presenta el mayor promedio de completado (80 %).
+Después de revisar la base de datos, estos son los principales resultados:
 
-La categoría **Design** muestra un promedio global de completado del **16,25 %** (65 puntos porcentuales acumulados entre cuatro inscripciones), inferior al de las demás categorías. Es prioritaria para estudiar posibles abandonos.
+- Encontré 4 inscripciones con menos del 10 % de progreso.
+- Había 2 inscripciones sin instructor.
+- Añadí 1 inscripción que faltaba.
+- Actualicé los 2 registros sin instructor.
+- Eliminé 2 inscripciones de prueba.
+- Después de las correcciones quedaron 16 inscripciones.
+
+También comparé el progreso medio de las categorías:
+
+| Categoría | Progreso medio |
+|---|---:|
+| Programming | 65,00 % |
+| Data | 47,67 % |
+| Marketing | 36,50 % |
+| Design | 16,25 % |
+
+La categoría con peor resultado es Design, con un 16,25 % de progreso medio. Creo que sería conveniente revisar estos cursos para entender por qué los estudiantes tienen tan poco progreso.
+
+En cuanto a los ingresos registrados, Programming es la categoría con la mayor cantidad, con 409,93 €.
+
+En general, este ejercicio me ha servido para practicar consultas SQL, trabajar con registros de una base de datos y utilizar funciones como `COUNT`, `AVG` y `SUM`.
+
+También he visto la importancia de comprobar los datos antes de sacar conclusiones, porque los registros incompletos y las cuentas de prueba pueden afectar a los resultados.
